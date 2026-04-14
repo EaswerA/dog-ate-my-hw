@@ -1,0 +1,530 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-sans); }
+
+  .app {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #1a0a2e 0%, #0d1b4b 50%, #0a2a1a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stars {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: twinkle 3s infinite alternate;
+  }
+
+  @keyframes twinkle { 0% { opacity: 0.2; } 100% { opacity: 0.8; } }
+
+  .title-wrap {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative; z-index: 1;
+  }
+
+  .title-wrap h1 {
+    font-size: clamp(28px, 6vw, 56px);
+    font-weight: 500;
+    background: linear-gradient(90deg, #ff9df5, #ffd36b, #9df5ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    color: rgba(255,255,255,0.5);
+    font-size: 15px;
+    margin-top: 6px;
+  }
+
+  .scene {
+    position: relative; z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .dog-stage {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 2rem 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+    min-height: 280px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .speech-bubble {
+    background: rgba(255,255,255,0.08);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    text-align: center;
+    transition: all 0.3s;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dog-container {
+    position: relative;
+    width: 200px;
+    height: 160px;
+    cursor: default;
+  }
+
+  #dog-svg { width: 200px; height: 160px; }
+
+  .drop-zone {
+    width: 100%;
+    border: 1.5px dashed rgba(255,255,255,0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(255,255,255,0.03);
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: rgba(255, 157, 245, 0.6);
+    background: rgba(255, 157, 245, 0.05);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .drop-icon { font-size: 28px; margin-bottom: 8px; }
+  .drop-label { font-size: 14px; color: rgba(255,255,255,0.6); }
+  .drop-sub { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 4px; }
+
+  .eaten-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .eaten-item {
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .file-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 500; font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 13px; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-meta { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+
+  .eaten-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: rgba(100, 255, 150, 0.12);
+    border: 0.5px solid rgba(100, 255, 150, 0.3);
+    color: rgba(100,255,150,0.9);
+    white-space: nowrap;
+  }
+
+  .chomping-file {
+    position: absolute;
+    font-size: 20px;
+    pointer-events: none;
+    z-index: 10;
+    animation: flyToMouth 0.9s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+  }
+
+  @keyframes flyToMouth {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    60% { transform: scale(0.5) rotate(20deg); opacity: 1; }
+    100% { transform: scale(0) rotate(45deg); opacity: 0; }
+  }
+
+  .dog-shake { animation: shake 0.5s ease; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px) rotate(-2deg); }
+    40% { transform: translateX(4px) rotate(2deg); }
+    60% { transform: translateX(-3px) rotate(-1deg); }
+    80% { transform: translateX(3px) rotate(1deg); }
+  }
+
+  .nom-burst {
+    position: absolute;
+    top: 30%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 20px;
+    pointer-events: none;
+    z-index: 20;
+    animation: burstOut 0.7s ease forwards;
+  }
+
+  @keyframes burstOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -80%) scale(1.3); }
+    100% { opacity: 0; transform: translate(-50%, -120%) scale(0.8); }
+  }
+
+  .tail-wag { animation: wagTail 0.4s ease infinite; }
+  @keyframes wagTail {
+    0%, 100% { transform-origin: bottom; transform: rotate(0deg); }
+    50% { transform-origin: bottom; transform: rotate(20deg); }
+  }
+
+  .counter-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    margin-top: -0.5rem;
+  }
+
+  .counter-num {
+    font-weight: 500;
+    color: rgba(255, 157, 245, 0.8);
+    font-size: 15px;
+  }
+</style>
+
+<div class="app" id="app">
+  <div class="stars" id="stars"></div>
+
+  <div class="title-wrap">
+    <h1>Dog Ate My Homework</h1>
+    <p class="subtitle">the perfect excuse, and it shows aswell</p>
+  </div>
+
+  <div class="scene">
+    <div class="dog-stage" id="dogStage">
+      <div class="speech-bubble" id="bubble">drop a file and watch me destroy your problems</div>
+
+      <div class="dog-container" id="dogContainer">
+        <svg id="dog-svg" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+          <!-- body -->
+          <ellipse cx="100" cy="110" rx="52" ry="36" fill="#d4a35a"/>
+          <!-- head -->
+          <circle cx="100" cy="68" r="34" fill="#d4a35a"/>
+          <!-- ears -->
+          <ellipse id="ear-l" cx="73" cy="48" rx="14" ry="20" fill="#b8854a" transform="rotate(-15 73 48)"/>
+          <ellipse id="ear-r" cx="127" cy="48" rx="14" ry="20" fill="#b8854a" transform="rotate(15 127 48)"/>
+          <!-- snout -->
+          <ellipse cx="100" cy="80" rx="18" ry="13" fill="#c49050"/>
+          <!-- nose -->
+          <ellipse cx="100" cy="74" rx="8" ry="5" fill="#2a1a0a"/>
+          <!-- nostrils -->
+          <ellipse cx="97" cy="75" rx="2" ry="1.5" fill="#1a0a00"/>
+          <ellipse cx="103" cy="75" rx="2" ry="1.5" fill="#1a0a00"/>
+          <!-- mouth idle -->
+          <g id="mouth-idle">
+            <path d="M92 83 Q100 89 108 83" stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+          <!-- mouth eating (hidden by default) -->
+          <g id="mouth-eating" opacity="0">
+            <ellipse cx="100" cy="86" rx="12" ry="9" fill="#1a0a00"/>
+            <ellipse cx="100" cy="84" rx="10" ry="5" fill="#cc4444"/>
+            <!-- teeth -->
+            <rect x="93" y="79" width="5" height="5" rx="1" fill="white"/>
+            <rect x="100" y="79" width="5" height="5" rx="1" fill="white"/>
+          </g>
+          <!-- eyes idle -->
+          <g id="eyes-idle">
+            <circle cx="88" cy="62" r="7" fill="white"/>
+            <circle cx="112" cy="62" r="7" fill="white"/>
+            <circle cx="89" cy="63" r="4" fill="#2a1a0a"/>
+            <circle cx="113" cy="63" r="4" fill="#2a1a0a"/>
+            <circle cx="90" cy="62" r="1.5" fill="white"/>
+            <circle cx="114" cy="62" r="1.5" fill="white"/>
+          </g>
+          <!-- eyes eating (hidden by default) -->
+          <g id="eyes-eating" opacity="0">
+            <circle cx="88" cy="62" r="7" fill="white"/>
+            <circle cx="112" cy="62" r="7" fill="white"/>
+            <circle cx="88" cy="63" r="5" fill="#2a1a0a"/>
+            <circle cx="112" cy="63" r="5" fill="#2a1a0a"/>
+            <circle cx="87" cy="61" r="2" fill="white"/>
+            <circle cx="111" cy="61" r="2" fill="white"/>
+          </g>
+          <!-- eyebrows munching -->
+          <g id="brows-eating" opacity="0">
+            <path d="M82 55 Q88 51 94 54" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M106 54 Q112 51 118 55" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </g>
+          <!-- tail -->
+          <path id="tail" d="M148 115 Q170 95 165 75 Q162 65 155 70" stroke="#d4a35a" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <!-- legs -->
+          <rect x="70" y="135" width="16" height="22" rx="6" fill="#c49050"/>
+          <rect x="91" y="138" width="16" height="20" rx="6" fill="#c49050"/>
+          <rect x="112" y="138" width="16" height="20" rx="6" fill="#c49050"/>
+          <rect x="133" y="135" width="16" height="22" rx="6" fill="#c49050"/>
+          <!-- collar -->
+          <rect x="76" y="95" width="48" height="8" rx="4" fill="#6644cc"/>
+          <circle cx="100" cy="103" r="4" fill="#ffd700"/>
+          <!-- paws -->
+          <ellipse cx="78" cy="157" rx="10" ry="6" fill="#b8854a"/>
+          <ellipse cx="99" cy="158" rx="10" ry="6" fill="#b8854a"/>
+          <ellipse cx="120" cy="158" rx="10" ry="6" fill="#b8854a"/>
+          <ellipse cx="141" cy="157" rx="10" ry="6" fill="#b8854a"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" multiple accept="*/*"/>
+      <div class="drop-icon">📂</div>
+      <div class="drop-label">drop files here or click to upload</div>
+      <div class="drop-sub">pdfs, excel, word, images — all homework accepted</div>
+    </div>
+
+    <div class="counter-bar" id="counterBar" style="display:none">
+      <span class="counter-num" id="counterNum">0</span>
+      <span>files consumed. teacher will never know.</span>
+    </div>
+
+    <div class="eaten-list" id="eatenList"></div>
+  </div>
+</div>
+
+<script>
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;
+    stars.appendChild(s);
+  }
+
+  const bubble = document.getElementById('bubble');
+  const dogContainer = document.getElementById('dogContainer');
+  const dogSvg = document.getElementById('dog-svg');
+  const eatenList = document.getElementById('eatenList');
+  const counterBar = document.getElementById('counterBar');
+  const counterNum = document.getElementById('counterNum');
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  let eatenCount = 0;
+  let isEating = false;
+
+  const idleSayings = [
+    "drop a file and watch me destroy your problems",
+    "i am so hungry for your homework rn",
+    "pdfs, excel sheets, essays — all delicious",
+    "your professor will never find the evidence",
+    "i have a very sophisticated palate for .docx files",
+    "my favorite food is assignment_final_v3_REAL.pdf",
+  ];
+
+  const eatingSayings = [
+    "NOM NOM NOM 😋",
+    "DELICIOUS! what grade was this?",
+    "mmmm... tastes like an all-nighter",
+    "gone. it never existed.",
+    "yummy yummy in my tummy",
+    "teacher? i hardly know her!",
+    "ate and left no crumbs"
+  ];
+
+  const fileColors = {
+    pdf: { bg: '#ff4444', text: 'white', label: 'PDF' },
+    xlsx: { bg: '#1d6f42', text: 'white', label: 'XLS' },
+    xls: { bg: '#1d6f42', text: 'white', label: 'XLS' },
+    csv: { bg: '#1d6f42', text: 'white', label: 'CSV' },
+    docx: { bg: '#2b5797', text: 'white', label: 'DOC' },
+    doc: { bg: '#2b5797', text: 'white', label: 'DOC' },
+    pptx: { bg: '#d24726', text: 'white', label: 'PPT' },
+    ppt: { bg: '#d24726', text: 'white', label: 'PPT' },
+    jpg: { bg: '#9b59b6', text: 'white', label: 'IMG' },
+    jpeg: { bg: '#9b59b6', text: 'white', label: 'IMG' },
+    png: { bg: '#9b59b6', text: 'white', label: 'IMG' },
+    txt: { bg: '#555', text: 'white', label: 'TXT' },
+    default: { bg: '#888', text: 'white', label: 'FILE' }
+  };
+
+  function getFileInfo(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    return fileColors[ext] || { ...fileColors.default, label: ext.toUpperCase().slice(0, 4) };
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function setEatingFace(eating) {
+    document.getElementById('mouth-idle').style.opacity = eating ? '0' : '1';
+    document.getElementById('mouth-eating').style.opacity = eating ? '1' : '0';
+    document.getElementById('eyes-idle').style.opacity = eating ? '0' : '1';
+    document.getElementById('eyes-eating').style.opacity = eating ? '1' : '0';
+    document.getElementById('brows-eating').style.opacity = eating ? '1' : '0';
+  }
+
+  function spawnNom(text) {
+    const burst = document.createElement('div');
+    burst.className = 'nom-burst';
+    burst.textContent = text;
+    dogContainer.appendChild(burst);
+    setTimeout(() => burst.remove(), 700);
+  }
+
+  function animateEating(fileEmoji) {
+    if (isEating) return;
+    isEating = true;
+
+    const rect = dogContainer.getBoundingClientRect();
+    const stageRect = document.getElementById('dogStage').getBoundingClientRect();
+
+    const fly = document.createElement('div');
+    fly.className = 'chomping-file';
+    fly.textContent = fileEmoji;
+    fly.style.cssText = `right: 10px; top: 20px;`;
+    document.getElementById('dogStage').appendChild(fly);
+
+    setEatingFace(true);
+    dogContainer.classList.add('dog-shake');
+    setTimeout(() => dogContainer.classList.remove('dog-shake'), 500);
+
+    const noms = ['NOM!', 'CHOMP!', 'YUM!', '😋'];
+    let nomI = 0;
+    const nomInterval = setInterval(() => {
+      spawnNom(noms[nomI % noms.length]);
+      nomI++;
+    }, 200);
+
+    setTimeout(() => {
+      fly.remove();
+      clearInterval(nomInterval);
+      setEatingFace(false);
+      isEating = false;
+
+      const idleSaying = idleSayings[Math.floor(Math.random() * idleSayings.length)];
+      bubble.textContent = idleSaying;
+    }, 900);
+  }
+
+  function addEatenItem(file) {
+    const info = getFileInfo(file.name);
+    const eatMsg = eatingSayings[Math.floor(Math.random() * eatingSayings.length)];
+    bubble.textContent = eatMsg;
+
+    const emojis = { pdf: '📄', xlsx: '📊', xls: '📊', csv: '📊', docx: '📝', doc: '📝', pptx: '📑', ppt: '📑', jpg: '🖼', jpeg: '🖼', png: '🖼', txt: '📃' };
+    const ext = file.name.split('.').pop().toLowerCase();
+    const emoji = emojis[ext] || '📁';
+
+    animateEating(emoji);
+
+    setTimeout(() => {
+      eatenCount++;
+      counterNum.textContent = eatenCount;
+      counterBar.style.display = 'flex';
+
+      const item = document.createElement('div');
+      item.className = 'eaten-item';
+      item.innerHTML = `
+        <div class="file-icon" style="background:${info.bg}; color:${info.text}; font-size:11px;">${info.label}</div>
+        <div class="file-info">
+          <div class="file-name">${file.name}</div>
+          <div class="file-meta">${formatSize(file.size)} &middot; eaten just now</div>
+        </div>
+        <div class="eaten-badge">consumed</div>
+      `;
+      eatenList.prepend(item);
+    }, 300);
+  }
+
+  function handleFiles(files) {
+    [...files].forEach((file, i) => {
+      setTimeout(() => addEatenItem(file), i * 600);
+    });
+  }
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFiles(e.target.files);
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+  });
+
+  const tail = document.getElementById('tail');
+  let tailAngle = 0;
+  let tailDir = 1;
+  setInterval(() => {
+    tailAngle += tailDir * 3;
+    if (tailAngle > 18 || tailAngle < -5) tailDir *= -1;
+    tail.setAttribute('transform', `rotate(${tailAngle}, 148, 130)`);
+  }, 30);
+
+  const earL = document.getElementById('ear-l');
+  const earR = document.getElementById('ear-r');
+  let earFlop = 0;
+  let earDir = 1;
+  setInterval(() => {
+    earFlop += earDir * 1.5;
+    if (earFlop > 5 || earFlop < -2) earDir *= -1;
+    earL.setAttribute('transform', `rotate(${-15 + earFlop}, 73, 48)`);
+    earR.setAttribute('transform', `rotate(${15 - earFlop}, 127, 48)`);
+  }, 60);
+</script>
