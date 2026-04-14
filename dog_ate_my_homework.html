@@ -1,8 +1,10 @@
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body { font-family: var(--font-sans); }
+  body { font-family: "Milky Way", "Orbitron", sans-serif; }
 
   .app {
     min-height: 100vh;
@@ -355,6 +357,7 @@
 
   let eatenCount = 0;
   let isEating = false;
+  let idleIndex = 0;
 
   const idleSayings = [
     "drop a file and watch me destroy your problems",
@@ -362,7 +365,7 @@
     "pdfs, excel sheets, essays — all delicious",
     "your professor will never find the evidence",
     "i have a very sophisticated palate for .docx files",
-    "my favorite food is assignment_final_v3_REAL.pdf",
+    "my favorite food is shawarma, but your hw is a close second",
   ];
 
   const eatingSayings = [
@@ -410,6 +413,11 @@
     document.getElementById('brows-eating').style.opacity = eating ? '1' : '0';
   }
 
+  function cycleIdleSaying() {
+    idleIndex = (idleIndex + 1) % idleSayings.length;
+    bubble.textContent = idleSayings[idleIndex];
+  }
+
   function spawnNom(text) {
     const burst = document.createElement('div');
     burst.className = 'nom-burst';
@@ -448,10 +456,14 @@
       setEatingFace(false);
       isEating = false;
 
-      const idleSaying = idleSayings[Math.floor(Math.random() * idleSayings.length)];
-      bubble.textContent = idleSaying;
+      idleIndex = Math.floor(Math.random() * idleSayings.length);
+      bubble.textContent = idleSayings[idleIndex];
     }, 900);
   }
+
+  dogContainer.addEventListener('click', () => {
+    if (!isEating) cycleIdleSaying();
+  });
 
   function addEatenItem(file) {
     const info = getFileInfo(file.name);
