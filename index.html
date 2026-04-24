@@ -250,6 +250,43 @@
     color: rgba(255, 157, 245, 0.8);
     font-size: 15px;
   }
+
+  .breed-selector {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 2;
+  }
+
+  .breed-select {
+    background: rgba(255,255,255,0.08);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-family: 'Fredoka One', 'Orbitron', sans-serif;
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .breed-select:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255, 157, 245, 0.4);
+  }
+
+  .breed-select:focus {
+    outline: none;
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255, 157, 245, 0.6);
+    box-shadow: 0 0 12px rgba(255, 157, 245, 0.2);
+  }
+
+  .breed-select option {
+    background: #1a1a2e;
+    color: rgba(255,255,255,0.9);
+  }
 </style>
 
 <div class="app" id="app">
@@ -262,6 +299,14 @@
 
   <div class="scene">
     <div class="dog-stage" id="dogStage">
+      <div class="breed-selector">
+        <select id="breedSelect" class="breed-select">
+          <option value="golden">Golden Retriever</option>
+          <option value="pug">Pug</option>
+          <option value="gshepherd">German Shepherd</option>
+          <option value="rottweiler">Rottweiler</option>
+        </select>
+      </div>
       <div class="speech-bubble" id="bubble">drop a file and watch me destroy your problems</div>
 
       <div class="dog-container" id="dogContainer">
@@ -540,21 +585,346 @@
   const tail = document.getElementById('tail');
   let tailAngle = 0;
   let tailDir = 1;
+
+  // Dog breed SVG definitions
+  const dogBreeds = {
+    golden: `
+      <!-- Golden Retriever -->
+      <!-- body -->
+      <ellipse cx="100" cy="110" rx="52" ry="36" fill="#d4a35a"/>
+      <!-- head -->
+      <circle cx="100" cy="68" r="34" fill="#d4a35a"/>
+      <!-- ears -->
+      <ellipse id="ear-l" cx="73" cy="48" rx="14" ry="20" fill="#b8854a" transform="rotate(-15 73 48)"/>
+      <ellipse id="ear-r" cx="127" cy="48" rx="14" ry="20" fill="#b8854a" transform="rotate(15 127 48)"/>
+      <!-- snout -->
+      <ellipse cx="100" cy="80" rx="18" ry="13" fill="#c49050"/>
+      <!-- nose -->
+      <ellipse cx="100" cy="74" rx="8" ry="5" fill="#2a1a0a"/>
+      <!-- nostrils -->
+      <ellipse cx="97" cy="75" rx="2" ry="1.5" fill="#1a0a00"/>
+      <ellipse cx="103" cy="75" rx="2" ry="1.5" fill="#1a0a00"/>
+      <!-- mouth idle -->
+      <g id="mouth-idle">
+        <path d="M92 83 Q100 89 108 83" stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- mouth eating -->
+      <g id="mouth-eating" opacity="0">
+        <ellipse cx="100" cy="86" rx="12" ry="9" fill="#1a0a00"/>
+        <ellipse cx="100" cy="84" rx="10" ry="5" fill="#cc4444"/>
+        <rect x="93" y="79" width="5" height="5" rx="1" fill="white"/>
+        <rect x="100" y="79" width="5" height="5" rx="1" fill="white"/>
+      </g>
+      <!-- eyes idle -->
+      <g id="eyes-idle">
+        <circle cx="88" cy="62" r="7" fill="white"/>
+        <circle cx="112" cy="62" r="7" fill="white"/>
+        <circle cx="89" cy="63" r="4" fill="#2a1a0a"/>
+        <circle cx="113" cy="63" r="4" fill="#2a1a0a"/>
+        <circle cx="90" cy="62" r="1.5" fill="white"/>
+        <circle cx="114" cy="62" r="1.5" fill="white"/>
+      </g>
+      <!-- eyes eating -->
+      <g id="eyes-eating" opacity="0">
+        <circle cx="88" cy="62" r="7" fill="white"/>
+        <circle cx="112" cy="62" r="7" fill="white"/>
+        <circle cx="88" cy="63" r="5" fill="#2a1a0a"/>
+        <circle cx="112" cy="63" r="5" fill="#2a1a0a"/>
+        <circle cx="87" cy="61" r="2" fill="white"/>
+        <circle cx="111" cy="61" r="2" fill="white"/>
+      </g>
+      <!-- eyebrows munching -->
+      <g id="brows-eating" opacity="0">
+        <path d="M82 55 Q88 51 94 54" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M106 54 Q112 51 118 55" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- tail -->
+      <path id="tail" d="M148 115 Q170 95 165 75 Q162 65 155 70" stroke="#d4a35a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <!-- legs -->
+      <rect x="70" y="135" width="16" height="22" rx="6" fill="#c49050"/>
+      <rect x="91" y="138" width="16" height="20" rx="6" fill="#c49050"/>
+      <rect x="112" y="138" width="16" height="20" rx="6" fill="#c49050"/>
+      <rect x="133" y="135" width="16" height="22" rx="6" fill="#c49050"/>
+      <!-- collar -->
+      <rect x="76" y="95" width="48" height="8" rx="4" fill="#6644cc"/>
+      <circle cx="100" cy="103" r="4" fill="#ffd700"/>
+      <!-- paws -->
+      <ellipse cx="78" cy="157" rx="10" ry="6" fill="#b8854a"/>
+      <ellipse cx="99" cy="158" rx="10" ry="6" fill="#b8854a"/>
+      <ellipse cx="120" cy="158" rx="10" ry="6" fill="#b8854a"/>
+      <ellipse cx="141" cy="157" rx="10" ry="6" fill="#b8854a"/>
+    `,
+    pug: `
+      <!-- Pug -->
+      <!-- body -->
+      <ellipse cx="100" cy="115" rx="48" ry="32" fill="#8B7355"/>
+      <!-- head -->
+      <circle cx="100" cy="70" r="30" fill="#8B7355"/>
+      <!-- ears -->
+      <ellipse id="ear-l" cx="77" cy="48" rx="12" ry="16" fill="#6B5345" transform="rotate(-20 77 48)"/>
+      <ellipse id="ear-r" cx="123" cy="48" rx="12" ry="16" fill="#6B5345" transform="rotate(20 123 48)"/>
+      <!-- snout -->
+      <ellipse cx="100" cy="78" rx="20" ry="14" fill="#9B8B6B"/>
+      <!-- nose -->
+      <ellipse cx="100" cy="72" rx="7" ry="6" fill="#2a1a0a"/>
+      <!-- nostrils -->
+      <circle cx="96" cy="73" r="1.5" fill="#1a0a00"/>
+      <circle cx="104" cy="73" r="1.5" fill="#1a0a00"/>
+      <!-- face wrinkles -->
+      <path d="M85 75 Q80 78 85 82" stroke="#6B5345" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path d="M115 75 Q120 78 115 82" stroke="#6B5345" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <!-- mouth idle -->
+      <g id="mouth-idle">
+        <path d="M92 85 Q100 88 108 85" stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- mouth eating -->
+      <g id="mouth-eating" opacity="0">
+        <ellipse cx="100" cy="87" rx="10" ry="7" fill="#1a0a00"/>
+        <ellipse cx="100" cy="85" rx="8" ry="4" fill="#cc4444"/>
+        <rect x="95" y="81" width="4" height="4" rx="1" fill="white"/>
+        <rect x="101" y="81" width="4" height="4" rx="1" fill="white"/>
+      </g>
+      <!-- eyes idle -->
+      <g id="eyes-idle">
+        <circle cx="88" cy="65" r="6" fill="white"/>
+        <circle cx="112" cy="65" r="6" fill="white"/>
+        <circle cx="88" cy="66" r="4" fill="#2a1a0a"/>
+        <circle cx="112" cy="66" r="4" fill="#2a1a0a"/>
+        <circle cx="89" cy="65" r="1.5" fill="white"/>
+        <circle cx="113" cy="65" r="1.5" fill="white"/>
+      </g>
+      <!-- eyes eating -->
+      <g id="eyes-eating" opacity="0">
+        <circle cx="88" cy="65" r="6" fill="white"/>
+        <circle cx="112" cy="65" r="6" fill="white"/>
+        <circle cx="88" cy="66" r="4" fill="#2a1a0a"/>
+        <circle cx="112" cy="66" r="4" fill="#2a1a0a"/>
+        <circle cx="87" cy="64" r="1.5" fill="white"/>
+        <circle cx="111" cy="64" r="1.5" fill="white"/>
+      </g>
+      <!-- eyebrows munching -->
+      <g id="brows-eating" opacity="0">
+        <path d="M82 58 Q88 54 94 57" stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M106 57 Q112 54 118 58" stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- tail -->
+      <path id="tail" d="M140 110 Q155 95 150 70 Q148 55 145 65" stroke="#8B7355" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <!-- legs -->
+      <rect x="75" y="140" width="14" height="18" rx="5" fill="#6B5345"/>
+      <rect x="93" y="142" width="14" height="16" rx="5" fill="#6B5345"/>
+      <rect x="113" y="142" width="14" height="16" rx="5" fill="#6B5345"/>
+      <rect x="131" y="140" width="14" height="18" rx="5" fill="#6B5345"/>
+      <!-- collar -->
+      <rect x="78" y="98" width="44" height="7" rx="3" fill="#FFD700"/>
+      <circle cx="100" cy="105" r="3" fill="#FF6B6B"/>
+      <!-- paws -->
+      <ellipse cx="82" cy="158" rx="9" ry="5" fill="#6B5345"/>
+      <ellipse cx="100" cy="158" rx="9" ry="5" fill="#6B5345"/>
+      <ellipse cx="118" cy="158" rx="9" ry="5" fill="#6B5345"/>
+      <ellipse cx="136" cy="158" rx="9" ry="5" fill="#6B5345"/>
+    `,
+    gshepherd: `
+      <!-- German Shepherd -->
+      <!-- body -->
+      <ellipse cx="100" cy="108" rx="56" ry="38" fill="#8B6F47"/>
+      <!-- head -->
+      <circle cx="100" cy="62" r="32" fill="#6B4423"/>
+      <!-- ears -->
+      <polygon id="ear-l" points="75,35 65,20 70,50" fill="#4B2C1A" transform="rotate(-10 70 38)"/>
+      <polygon id="ear-r" points="125,35 135,20 130,50" fill="#4B2C1A" transform="rotate(10 130 38)"/>
+      <!-- snout -->
+      <ellipse cx="100" cy="75" rx="17" ry="12" fill="#9B8C73"/>
+      <!-- nose -->
+      <ellipse cx="100" cy="71" rx="7" ry="4" fill="#2a1a0a"/>
+      <!-- nostrils -->
+      <ellipse cx="97" cy="72" rx="2" ry="1.5" fill="#1a0a00"/>
+      <ellipse cx="103" cy="72" rx="2" ry="1.5" fill="#1a0a00"/>
+      <!-- mouth idle -->
+      <g id="mouth-idle">
+        <path d="M91 80 Q100 84 109 80" stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- mouth eating -->
+      <g id="mouth-eating" opacity="0">
+        <ellipse cx="100" cy="83" rx="12" ry="8" fill="#1a0a00"/>
+        <ellipse cx="100" cy="81" rx="10" ry="5" fill="#cc4444"/>
+        <rect x="93" y="77" width="5" height="5" rx="1" fill="white"/>
+        <rect x="100" y="77" width="5" height="5" rx="1" fill="white"/>
+      </g>
+      <!-- eyes idle -->
+      <g id="eyes-idle">
+        <circle cx="86" cy="58" r="7" fill="white"/>
+        <circle cx="114" cy="58" r="7" fill="white"/>
+        <circle cx="87" cy="59" r="4" fill="#2a1a0a"/>
+        <circle cx="115" cy="59" r="4" fill="#2a1a0a"/>
+        <circle cx="88" cy="58" r="1.5" fill="white"/>
+        <circle cx="116" cy="58" r="1.5" fill="white"/>
+      </g>
+      <!-- eyes eating -->
+      <g id="eyes-eating" opacity="0">
+        <circle cx="86" cy="58" r="7" fill="white"/>
+        <circle cx="114" cy="58" r="7" fill="white"/>
+        <circle cx="86" cy="59" r="5" fill="#2a1a0a"/>
+        <circle cx="114" cy="59" r="5" fill="#2a1a0a"/>
+        <circle cx="85" cy="57" r="2" fill="white"/>
+        <circle cx="113" cy="57" r="2" fill="white"/>
+      </g>
+      <!-- eyebrows munching -->
+      <g id="brows-eating" opacity="0">
+        <path d="M80 50 Q86 46 92 49" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M108 49 Q114 46 120 50" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- tan marking on face -->
+      <ellipse cx="95" cy="65" rx="8" ry="10" fill="#C4956B" opacity="0.5"/>
+      <ellipse cx="105" cy="65" rx="8" ry="10" fill="#C4956B" opacity="0.5"/>
+      <!-- tail -->
+      <path id="tail" d="M152 110 Q175 85 170 55 Q167 40 160 50" stroke="#6B4423" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- legs -->
+      <rect x="68" y="135" width="16" height="24" rx="6" fill="#6B4423"/>
+      <rect x="88" y="138" width="16" height="22" rx="6" fill="#6B4423"/>
+      <rect x="108" y="138" width="16" height="22" rx="6" fill="#6B4423"/>
+      <rect x="128" y="135" width="16" height="24" rx="6" fill="#6B4423"/>
+      <!-- collar -->
+      <rect x="76" y="93" width="48" height="8" rx="4" fill="#6644cc"/>
+      <circle cx="100" cy="101" r="4" fill="#ffd700"/>
+      <!-- paws -->
+      <ellipse cx="76" cy="159" rx="11" ry="6" fill="#4B2C1A"/>
+      <ellipse cx="96" cy="160" rx="11" ry="6" fill="#4B2C1A"/>
+      <ellipse cx="116" cy="160" rx="11" ry="6" fill="#4B2C1A"/>
+      <ellipse cx="136" cy="159" rx="11" ry="6" fill="#4B2C1A"/>
+    `,
+    rottweiler: `
+      <!-- Rottweiler -->
+      <!-- body -->
+      <ellipse cx="100" cy="110" rx="54" ry="36" fill="#2a2a2a"/>
+      <!-- tan chest marking -->
+      <ellipse cx="100" cy="115" rx="20" ry="28" fill="#C4956B" opacity="0.9"/>
+      <!-- head -->
+      <circle cx="100" cy="68" r="32" fill="#1a1a1a"/>
+      <!-- ears -->
+      <ellipse id="ear-l" cx="74" cy="50" rx="13" ry="18" fill="#1a1a1a" transform="rotate(-25 74 50)"/>
+      <ellipse id="ear-r" cx="126" cy="50" rx="13" ry="18" fill="#1a1a1a" transform="rotate(25 126 50)"/>
+      <!-- tan marking on head -->
+      <ellipse cx="95" cy="65" rx="7" ry="8" fill="#C4956B"/>
+      <ellipse cx="105" cy="65" rx="7" ry="8" fill="#C4956B"/>
+      <!-- snout -->
+      <ellipse cx="100" cy="78" rx="16" ry="12" fill="#1a1a1a"/>
+      <!-- nose -->
+      <ellipse cx="100" cy="74" rx="7" ry="5" fill="#000000"/>
+      <!-- nostrils -->
+      <ellipse cx="97" cy="75" rx="2" ry="1.5" fill="#000000"/>
+      <ellipse cx="103" cy="75" rx="2" ry="1.5" fill="#000000"/>
+      <!-- mouth idle -->
+      <g id="mouth-idle">
+        <path d="M91 82 Q100 87 109 82" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- mouth eating -->
+      <g id="mouth-eating" opacity="0">
+        <ellipse cx="100" cy="85" rx="11" ry="8" fill="#000000"/>
+        <ellipse cx="100" cy="83" rx="9" ry="5" fill="#cc4444"/>
+        <rect x="94" y="79" width="4" height="5" rx="1" fill="white"/>
+        <rect x="100" y="79" width="4" height="5" rx="1" fill="white"/>
+      </g>
+      <!-- eyes idle -->
+      <g id="eyes-idle">
+        <circle cx="87" cy="62" r="7" fill="white"/>
+        <circle cx="113" cy="62" r="7" fill="white"/>
+        <circle cx="88" cy="63" r="4" fill="#000000"/>
+        <circle cx="114" cy="63" r="4" fill="#000000"/>
+        <circle cx="89" cy="62" r="1.5" fill="white"/>
+        <circle cx="115" cy="62" r="1.5" fill="white"/>
+      </g>
+      <!-- eyes eating -->
+      <g id="eyes-eating" opacity="0">
+        <circle cx="87" cy="62" r="7" fill="white"/>
+        <circle cx="113" cy="62" r="7" fill="white"/>
+        <circle cx="87" cy="63" r="5" fill="#000000"/>
+        <circle cx="113" cy="63" r="5" fill="#000000"/>
+        <circle cx="86" cy="61" r="2" fill="white"/>
+        <circle cx="112" cy="61" r="2" fill="white"/>
+      </g>
+      <!-- eyebrows munching -->
+      <g id="brows-eating" opacity="0">
+        <path d="M81 55 Q87 51 93 54" stroke="#000000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M107 54 Q113 51 119 55" stroke="#000000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- tail -->
+      <path id="tail" d="M148 115 Q170 95 165 75 Q162 65 155 70" stroke="#2a2a2a" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <!-- legs -->
+      <rect x="70" y="135" width="16" height="22" rx="6" fill="#1a1a1a"/>
+      <rect x="91" y="138" width="16" height="20" rx="6" fill="#1a1a1a"/>
+      <rect x="112" y="138" width="16" height="20" rx="6" fill="#1a1a1a"/>
+      <rect x="133" y="135" width="16" height="22" rx="6" fill="#1a1a1a"/>
+      <!-- tan paw markings -->
+      <ellipse cx="78" cy="157" rx="10" ry="6" fill="#C4956B"/>
+      <ellipse cx="99" cy="158" rx="10" ry="6" fill="#C4956B"/>
+      <ellipse cx="120" cy="158" rx="10" ry="6" fill="#C4956B"/>
+      <ellipse cx="141" cy="157" rx="10" ry="6" fill="#C4956B"/>
+      <!-- collar -->
+      <rect x="76" y="95" width="48" height="8" rx="4" fill="#6644cc"/>
+      <circle cx="100" cy="103" r="4" fill="#ffd700"/>
+    `
+  };
+
+  // Function to render a dog breed
+  function renderDog(breed) {
+    const svgContent = dogBreeds[breed] || dogBreeds.golden;
+    dogSvg.innerHTML = svgContent;
+    setupDogAnimations();
+  }
+
+  // Function to setup tail and ear animations
+  function setupDogAnimations() {
+    const newTail = document.getElementById('tail');
+    if (newTail) {
+      tailAngle = 0;
+      tailDir = 1;
+    }
+
+    const newEarL = document.getElementById('ear-l');
+    const newEarR = document.getElementById('ear-r');
+    if (newEarL && newEarR) {
+      let earFlop = 0;
+      let earDir = 1;
+      clearInterval(earInterval);
+      earInterval = setInterval(() => {
+        earFlop += earDir * 1.5;
+        if (earFlop > 5 || earFlop < -2) earDir *= -1;
+        newEarL.setAttribute('transform', `rotate(${-15 + earFlop}, 73, 48)`);
+        newEarR.setAttribute('transform', `rotate(${15 - earFlop}, 127, 48)`);
+      }, 60);
+    }
+  }
+
+  let earInterval;
+
+  // Breed selector change event
+  document.getElementById('breedSelect').addEventListener('change', (e) => {
+    renderDog(e.target.value);
+  });
+
+  // Tail animation loop
   setInterval(() => {
-    tailAngle += tailDir * 3;
-    if (tailAngle > 18 || tailAngle < -5) tailDir *= -1;
-    tail.setAttribute('transform', `rotate(${tailAngle}, 148, 130)`);
+    const currentTail = document.getElementById('tail');
+    if (currentTail) {
+      tailAngle += tailDir * 3;
+      if (tailAngle > 18 || tailAngle < -5) tailDir *= -1;
+      currentTail.setAttribute('transform', `rotate(${tailAngle}, 148, 130)`);
+    }
   }, 30);
 
   const earL = document.getElementById('ear-l');
   const earR = document.getElementById('ear-r');
   let earFlop = 0;
   let earDir = 1;
-  setInterval(() => {
-    earFlop += earDir * 1.5;
-    if (earFlop > 5 || earFlop < -2) earDir *= -1;
-    earL.setAttribute('transform', `rotate(${-15 + earFlop}, 73, 48)`);
-    earR.setAttribute('transform', `rotate(${15 - earFlop}, 127, 48)`);
+  earInterval = setInterval(() => {
+    const newEarL = document.getElementById('ear-l');
+    const newEarR = document.getElementById('ear-r');
+    if (newEarL && newEarR) {
+      earFlop += earDir * 1.5;
+      if (earFlop > 5 || earFlop < -2) earDir *= -1;
+      newEarL.setAttribute('transform', `rotate(${-15 + earFlop}, 73, 48)`);
+      newEarR.setAttribute('transform', `rotate(${15 - earFlop}, 127, 48)`);
+    }
   }, 60);
 </script>
 </body>
